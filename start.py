@@ -37,6 +37,20 @@ class Flatten(torch.nn.Module):
 
 directory  = os.getcwd()
 
+###############################################################################
+#Environnement creation
+###############################################################################
+if not os.path.exists(directory+"/results"):
+    os.makedirs(directory+"/results")
+if not os.path.exists(directory+"/results/BadPredictions"):
+    os.makedirs(directory+"/results/BadPredictions")
+if not os.path.exists(directory+"/results/BadPredictions/training"):
+    os.makedirs(directory+"/results/BadPredictions/training")
+if not os.path.exists(directory+"/results/BadPredictions/validation"):
+    os.makedirs(directory+"/results/BadPredictions/validation")
+if not os.path.exists(directory+"/results/BadPredictions"):
+    os.makedirs(directory+"/results/comparaisons")
+
 #Files are stored in pickle format.
 #Load them like how you load any pickle. The data is a numpy array
 train_images = pd.read_pickle(directory+'/input/new_train_images.pkl')
