@@ -4,19 +4,21 @@ import pandas as pd
 import sys
 import matplotlib.pyplot as plt
 import pickle
+import os
 
 
 
 
 #img = cv2.imread(r'C:\Users\Alexandre\Documents\ETS-Session-2\COMP-551\Projet 3\Image.jpg')
-directory  = "C:/Users/Alexandre/Documents/ETS-Session-2/COMP-551/Projet 3"
+directory  = directory  = os.getcwd()
 train_images = pd.read_pickle(directory+'/input/train_images.pkl')
 train_labels = pd.read_csv(directory+'/input/train_labels.csv')
 
 def printer(ide):
-    fig = plt.figure()
+    plt.figure()
     plt.title('Label: {}'.format(train_labels.iloc[ide]['Category']))
     plt.imshow(train_images[ide])
+    plt.close
 
 def dele(img):
     sm_img = np.zeros((64,64),dtype=np.uint8) 
