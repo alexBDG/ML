@@ -123,45 +123,51 @@ def Accuracy_debuguage(y_pred,labels,images,data_set):
     
 def Neu(train_images,
         train_labels,
+        batch_size = 100,
+        num_epochs = 10,
         data_full = True,
         model_case = 4,
         loss_function = "MSE",
         grad_algorithm = "SGD",
-        iterration = 2000,
         is_cuda = torch.cuda.is_available(),
         speed_calculs = True,
         save_model = True,
         save_bad_predictions = False
         ):
     
+    x_size = train_images.shape[1]
+    y_size = train_images.shape[2]
     if data_full == True:
         validation_images = train_images[35000:40000]
         validation_labels = train_labels[35000:40000]
-        train_images = train_images[:35000]
-        train_labels = train_labels[:35000]
-        
+#        validation_images = [train_images[35000+batch_size*i:35000+batch_size*(i+1)] for i in range(int(5000/batch_size))]
+#        validation_labels = [train_labels[35000+batch_size*i:35000+batch_size*(i+1)] for i in range(int(5000/batch_size))]
+        train_images = [train_images[batch_size*i:batch_size*(i+1)] for i in range(int(35000/batch_size))]
+        train_labels = [train_labels[batch_size*i:batch_size*(i+1)] for i in range(int(35000/batch_size))]
     else:
+        batch_size = 20
         validation_images = train_images[39900:40000]
         validation_labels = train_labels[39900:40000]
-        train_images = train_images[:1000]
-        train_labels = train_labels[:1000]
+#        validation_images = [train_images[39900+batch_size*i:39900+batch_size*(i+1)] for i in range(int(100/batch_size))]
+#        validation_labels = [train_labels[39900+batch_size*i:39900+batch_size*(i+1)] for i in range(int(100/batch_size))]
+        train_images = [train_images[batch_size*i:batch_size*(i+1)] for i in range(int(1000/batch_size))]
+        train_labels = [train_labels[batch_size*i:batch_size*(i+1)] for i in range(int(1000/batch_size))]
         
-        
-    batch_size = len(train_images)
     if is_cuda==True:
-        x = torch.cuda.FloatTensor(train_images.reshape(batch_size, 1, train_images.shape[1], train_images.shape[2]))
-        y = torch.cuda.FloatTensor([vect(train_labels.iloc[ide]['Category']) for ide in range(batch_size)])
+        train_images = [torch.cuda.FloatTensor(images.reshape(batch_size, 1, x_size, y_size)) for images in train_images]
+        train_labels = [torch.cuda.FloatTensor([vect(labels.iloc[ide]['Category']) for ide in range(batch_size)]) for labels in train_labels]
     else:
-        x = torch.tensor(train_images.reshape(batch_size, 1, train_images.shape[1], train_images.shape[2]))
-        y = torch.tensor([vect(train_labels.iloc[ide]['Category']) for ide in range(batch_size)])
+        train_images = [torch.tensor(images.reshape(batch_size, 1, x_size, y_size)) for images in train_images]
+        train_labels = [torch.tensor([vect(labels.iloc[ide]['Category']) for ide in range(batch_size)]) for labels in train_labels]
 
+    if is_cuda==True:
+        x_val = torch.cuda.FloatTensor(validation_images.reshape(len(validation_images), 1, x_size, y_size))
+    else:
+        x_val = torch.tensor(validation_images.reshape(len(validation_images), 1, x_size, y_size))
+        
+    num_data = len(train_images)
+    data_training = [(train_images[i],train_labels[i]) for i in range(num_data)]
     
-    batch_size_val = len(validation_images)
-    if is_cuda==True:
-        x_val = torch.cuda.FloatTensor(validation_images.reshape(batch_size_val, 1, validation_images.shape[1], validation_images.shape[2]))
-    else:
-        x_val = torch.tensor(validation_images.reshape(batch_size_val, 1, validation_images.shape[1], validation_images.shape[2]))
-
     
     if model_case == 1:
         model = torch.nn.Sequential(
@@ -228,19 +234,20 @@ def Neu(train_images,
         accuracies_val = []
     
     if grad_algorithm == "SGD":
-        optimizer = torch.optim.SGD(model.parameters(), lr=1e-5, momentum=0.9)
+        optimizer = torch.optim.SGD(model.parameters(), lr=1e-4, momentum=0.9)
     elif grad_algorithm == "Adam":
         optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
     elif grad_algorithm == "Adadelta":
         optimizer = torch.optim.Adadelta(model.parameters())
         
         
-    try:
-        for t in range(iterration):
+    for epoch in range(num_epochs):
+        
+        for t, (x,y) in enumerate(data_training):
             
             if speed_calculs == False:
-                y_val_pred = model(x_val)
-                accv = Accuracy(y_val_pred,validation_labels)
+                y_val_pred = model(x_val[t])
+                accv = Accuracy(y_val_pred,validation_labels[t])
                 accuracies_val.append(accv)
         
             y_pred = model(x)
@@ -253,27 +260,22 @@ def Neu(train_images,
             losses.append(loss.data.item())
             
             if speed_calculs == False:
-                acc = Accuracy(y_pred,train_labels)
+                acc = Accuracy(y_pred,train_labels[t])
                 accuracies.append(acc)
             
             if speed_calculs == False:
-                ph = "\rProgression: {0} % -- Loss : {1} -- Accuracy : t->{2} & v->{3}    ".format(round(float(100*t)/float(iterration-1),3),round(loss.item(),2),round(acc,2),round(accv,2))
+                ph = "\rEpoch [{0}/{1}], Step [{2}/{3}] -- Loss: {4} -- Accuracy : t->{2} & v->{3}    ".format(epoch,num_epochs-1,t,num_data-1,round(loss.item(),2),round(acc,2),round(accv,2))
                 sys.stdout.write(ph)
                 sys.stdout.flush()
             else:
-                ph = "\rProgression: {0} % -- Loss : {1}".format(round(float(100*t)/float(iterration-1),3),round(loss.item(),2))
+                ph = "\rEpoch [{0}/{1}], Step [{2}/{3}] -- Loss : {1}    ".format(epoch,num_epochs,t,num_data,round(loss.item(),4))
                 sys.stdout.write(ph)
                 sys.stdout.flush()
     
             optimizer.zero_grad()
-    
             loss.backward()
-    
             optimizer.step()
             
-    except:
-        print()
-        print("STOP")
                 
     if speed_calculs == False:
         fig, ax1 = plt.subplots(figsize=None)
@@ -315,8 +317,11 @@ def Neu(train_images,
         y_val_pred = model(x_val)
         Accuracy_debuguage(y_val_pred,validation_labels,validation_images,"validation")
         
-    return Accuracy(model(x_val),validation_labels)
+    acc = Accuracy(model(x_val),validation_labels)
         
+    return acc
+        
+
 start = time.time()
 accuracy = Neu(train_images,train_labels)
 print("Took {0}s".format(time.time()-start))
