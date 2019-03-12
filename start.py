@@ -96,7 +96,7 @@ def vect(Choix):
 
     
 def Accuracy(y_pred,train_labels):
-    num_data = len(train_images)
+    N = len(train_images)
     acc = 0.
     for ide in range(N):
         a = [y_pred[ide,i].item() for i in range(10)]
@@ -267,11 +267,11 @@ def Neu(train_images,
                 accuracies.append(acc)
             
             if speed_calculs == False:
-                ph = "\rEpoch [{0}/{1}], Step [{2}/{3}] -- Loss: {4} -- Accuracy : t->{2} & v->{3}    ".format(epoch,num_epochs-1,t,num_data-1,round(loss.item(),2),round(acc,2),round(accv,2))
+                ph = "\rEpoch [{0}/{1}], Step [{2}/{3}] -- Loss: {4} -- Accuracy : t->{2} & v->{3}    ".format(epoch,num_epochs-1,t,num_data-1,round(loss.item(),4),round(acc,2),round(accv,2))
                 sys.stdout.write(ph)
                 sys.stdout.flush()
             else:
-                ph = "\rEpoch [{0}/{1}], Step [{2}/{3}] -- Loss : {1}    ".format(epoch,num_epochs,t,num_data,round(loss.item(),4))
+                ph = "\rEpoch [{0}/{1}], Step [{2}/{3}] -- Loss : {4}    ".format(epoch,num_epochs-1,t,num_data-1,round(loss.item(),4))
                 sys.stdout.write(ph)
                 sys.stdout.flush()
     
