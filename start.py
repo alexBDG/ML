@@ -96,7 +96,7 @@ def vect(Choix):
 
     
 def Accuracy(y_pred,train_labels):
-    N = len(train_images)
+    N = len(train_labels)
     acc = 0.
     for ide in range(N):
         a = [y_pred[ide,i].item() for i in range(10)]
@@ -126,7 +126,7 @@ def Neu(train_images,
         train_labels,
         batch_size = 100,
         num_epochs = 10,
-        data_full = True,
+        data_full = False,
         model_case = 4,
         loss_function = "MSE",
         grad_algorithm = "SGD",
@@ -163,10 +163,10 @@ def Neu(train_images,
 
     if is_cuda==True:
         x_val = [torch.cuda.FloatTensor(images.reshape(batch_size, 1, x_size, y_size)) for images in validation_images]
-        validation_labels = [torch.cuda.FloatTensor([vect(labels.iloc[ide]['Category']) for ide in range(batch_size)]) for labels in validation_labels]
+#        validation_labels = [torch.cuda.FloatTensor([vect(labels.iloc[ide]['Category']) for ide in range(batch_size)]) for labels in validation_labels]
     else:
         x_val = [torch.tensor(images.reshape(batch_size, 1, x_size, y_size)) for images in validation_images]
-        validation_labels = [torch.tensor([vect(labels.iloc[ide]['Category']) for ide in range(batch_size)]) for labels in validation_labels]
+#        validation_labels = [torch.tensor([vect(labels.iloc[ide]['Category']) for ide in range(batch_size)]) for labels in validation_labels]
         
     num_data = len(train_images)
     data_training = [(train_images[i],train_labels[i]) for i in range(num_data)]
@@ -322,7 +322,7 @@ def Neu(train_images,
         
     acc = [Accuracy(model(x_val[t]),validation_labels[t]) for t in range(len(x_val))]
         
-    return acc
+    return (sum(acc)/len(acc))
         
 
 start = time.time()
