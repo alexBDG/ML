@@ -94,8 +94,9 @@ def vect(Choix):
         Y = [0.,0.,0.,0.,0.,0.,0.,0.,0.,1.]
     return Y
 
+    
 def Accuracy(y_pred,train_labels):
-    N = len(train_labels)
+    num_data = len(train_images)
     acc = 0.
     for ide in range(N):
         a = [y_pred[ide,i].item() for i in range(10)]
@@ -126,9 +127,9 @@ def Neu(train_images,
         batch_size = 100,
         num_epochs = 10,
         data_full = True,
-        model_case = 3,
-        loss_function = "Cross_Entropy",
-        grad_algorithm = "Adadelta",
+        model_case = 4,
+        loss_function = "MSE",
+        grad_algorithm = "SGD",
         is_cuda = torch.cuda.is_available(),
         speed_calculs = True,
         save_model = True,
@@ -138,18 +139,18 @@ def Neu(train_images,
     x_size = train_images.shape[1]
     y_size = train_images.shape[2]
     if data_full == True:
-        validation_images = train_images[35000:40000]
-        validation_labels = train_labels[35000:40000]
-#        validation_images = [train_images[35000+batch_size*i:35000+batch_size*(i+1)] for i in range(int(5000/batch_size))]
-#        validation_labels = [train_labels[35000+batch_size*i:35000+batch_size*(i+1)] for i in range(int(5000/batch_size))]
+#        validation_images = train_images[35000:40000]
+#        validation_labels = train_labels[35000:40000]
+        validation_images = [train_images[35000+batch_size*i:35000+batch_size*(i+1)] for i in range(int(5000/batch_size))]
+        validation_labels = [train_labels[35000+batch_size*i:35000+batch_size*(i+1)] for i in range(int(5000/batch_size))]
         train_images = [train_images[batch_size*i:batch_size*(i+1)] for i in range(int(35000/batch_size))]
         train_labels = [train_labels[batch_size*i:batch_size*(i+1)] for i in range(int(35000/batch_size))]
     else:
         batch_size = 20
-        validation_images = train_images[39900:40000]
-        validation_labels = train_labels[39900:40000]
-#        validation_images = [train_images[39900+batch_size*i:39900+batch_size*(i+1)] for i in range(int(100/batch_size))]
-#        validation_labels = [train_labels[39900+batch_size*i:39900+batch_size*(i+1)] for i in range(int(100/batch_size))]
+#        validation_images = train_images[39900:40000]
+#        validation_labels = train_labels[39900:40000]
+        validation_images = [train_images[39900+batch_size*i:39900+batch_size*(i+1)] for i in range(int(100/batch_size))]
+        validation_labels = [train_labels[39900+batch_size*i:39900+batch_size*(i+1)] for i in range(int(100/batch_size))]
         train_images = [train_images[batch_size*i:batch_size*(i+1)] for i in range(int(1000/batch_size))]
         train_labels = [train_labels[batch_size*i:batch_size*(i+1)] for i in range(int(1000/batch_size))]
         
@@ -161,9 +162,11 @@ def Neu(train_images,
         train_labels = [torch.tensor([vect(labels.iloc[ide]['Category']) for ide in range(batch_size)]) for labels in train_labels]
 
     if is_cuda==True:
-        x_val = torch.cuda.FloatTensor(validation_images.reshape(len(validation_images), 1, x_size, y_size))
+        x_val = [torch.cuda.FloatTensor(images.reshape(batch_size, 1, x_size, y_size)) for images in validation_images]
+        validation_labels = [torch.cuda.FloatTensor([vect(labels.iloc[ide]['Category']) for ide in range(batch_size)]) for labels in validation_labels]
     else:
-        x_val = torch.tensor(validation_images.reshape(len(validation_images), 1, x_size, y_size))
+        x_val = [torch.tensor(images.reshape(batch_size, 1, x_size, y_size)) for images in validation_images]
+        validation_labels = [torch.tensor([vect(labels.iloc[ide]['Category']) for ide in range(batch_size)]) for labels in validation_labels]
         
     num_data = len(train_images)
     data_training = [(train_images[i],train_labels[i]) for i in range(num_data)]
@@ -264,11 +267,11 @@ def Neu(train_images,
                 accuracies.append(acc)
             
             if speed_calculs == False:
-                ph = "\rEpoch [{0}/{1}], Step [{2}/{3}] -- Loss: {4} -- Accuracy : t->{2} & v->{3}    ".format(epoch,num_epochs-1,t,num_data-1,round(loss.item(),4),round(acc,2),round(accv,2))
+                ph = "\rEpoch [{0}/{1}], Step [{2}/{3}] -- Loss: {4} -- Accuracy : t->{2} & v->{3}    ".format(epoch,num_epochs-1,t,num_data-1,round(loss.item(),2),round(acc,2),round(accv,2))
                 sys.stdout.write(ph)
                 sys.stdout.flush()
             else:
-                ph = "\rEpoch [{0}/{1}], Step [{2}/{3}] -- Loss : {4}    ".format(epoch,num_epochs-1,t,num_data-1,round(loss.item(),4))
+                ph = "\rEpoch [{0}/{1}], Step [{2}/{3}] -- Loss : {1}    ".format(epoch,num_epochs,t,num_data,round(loss.item(),4))
                 sys.stdout.write(ph)
                 sys.stdout.flush()
     
@@ -317,7 +320,7 @@ def Neu(train_images,
         y_val_pred = model(x_val)
         Accuracy_debuguage(y_val_pred,validation_labels,validation_images,"validation")
         
-    acc = Accuracy(model(x_val),validation_labels)
+    acc = [Accuracy(model(x_val[t]),validation_labels[t]) for t in range(len(x_val))]
         
     return acc
         
