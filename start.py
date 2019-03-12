@@ -315,7 +315,7 @@ def Neu(train_images,
         y_val_pred = model(x_val)
         Accuracy_debuguage(y_val_pred,validation_labels,validation_images,"validation")
         
-    return Accuracy(y_pred,train_labels)
+    return Accuracy(model(x_val),validation_labels)
         
 start = time.time()
 accuracy = Neu(train_images,train_labels)
