@@ -8,6 +8,18 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+class MLP(nn.Module):
+  def __init__(self,num_units1=250,num_units2=100):
+    super(MLP, self).__init__()
+    self.linear1 = nn.Linear(51*51,num_units1)
+    self.linear2 = nn.Linear(num_units1,num_units2)
+    self.linear3 = nn.Linear(num_units2,10)
+                                        
+  def forward(self,X):
+    X = F.relu(self.linear1(X))
+    X = F.relu(self.linear2(X))
+    X = self.linear3(X)
+    return F.log_softmax(X, dim=1)
 
 class Net_1(nn.Module):
     
