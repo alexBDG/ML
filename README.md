@@ -6,7 +6,7 @@ Alexandre Banon; Vincent Delmas; Leila Fabing
 
 
 
-## Instructions
+## Instructions :
 
 You need to add a folder "input" with your *.plk files
 
